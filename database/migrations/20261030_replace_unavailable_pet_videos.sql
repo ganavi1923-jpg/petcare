@@ -2,25 +2,42 @@ BEGIN;
 
 DO $$
 DECLARE
-  matching_video_count INTEGER;
+  target_video_count INTEGER;
 BEGIN
-  SELECT COUNT(*)
-    INTO matching_video_count
-  FROM public.videos AS video
-  JOIN (
-    VALUES
-      ('ea3f621e-600e-4abb-b8e1-b65be611b209'::UUID, 'omg5DVPWLjA'),
-      ('25defe45-47ed-42f2-93ba-9ec686d53346'::UUID, 'eKp_JCFjBM4'),
-      ('df039ef7-4239-4256-97f6-281b9de59772'::UUID, 'T3EdDCVPv-E'),
-      ('b427b964-b6e2-456c-ac21-e75760a1bac5'::UUID, '8dVbBXLMmkE')
-  ) AS expected(id, youtube_id)
-    ON video.id = expected.id
-   AND video.youtube_id = expected.youtube_id;
+  IF to_regclass('public.videos') IS NULL THEN
+    RAISE EXCEPTION 'Table public.videos does not exist; apply the base schema first.';
+  END IF;
 
-  IF matching_video_count <> 4 THEN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'videos'
+      AND column_name IN (
+        'id', 'title', 'category', 'description',
+        'youtube_url', 'youtube_id', 'thumbnail_url', 'duration'
+      )
+    GROUP BY table_name
+    HAVING COUNT(*) = 8
+  ) THEN
     RAISE EXCEPTION
-      'Expected exactly four unchanged PetCare Connect video rows, found %; no video rows were changed.',
-      matching_video_count;
+      'public.videos does not contain all required PetCare Connect columns.';
+  END IF;
+
+  SELECT COUNT(*)
+    INTO target_video_count
+  FROM public.videos
+  WHERE id IN (
+    'ea3f621e-600e-4abb-b8e1-b65be611b209'::UUID,
+    '25defe45-47ed-42f2-93ba-9ec686d53346'::UUID,
+    'df039ef7-4239-4256-97f6-281b9de59772'::UUID,
+    'b427b964-b6e2-456c-ac21-e75760a1bac5'::UUID
+  );
+
+  IF target_video_count <> 4 THEN
+    RAISE EXCEPTION
+      'Expected exactly four target PetCare Connect video rows, found %; no video rows were changed.',
+      target_video_count;
   END IF;
 END;
 $$;
@@ -69,8 +86,7 @@ FROM (
       'nQC2XH-0HEM'
     )
 ) AS replacement(id, expected_youtube_id, title, category, description, youtube_id)
-WHERE video.id = replacement.id
-  AND video.youtube_id = replacement.expected_youtube_id;
+WHERE video.id = replacement.id;
 
 SELECT id, title, category, youtube_id, youtube_url, thumbnail_url
 FROM public.videos

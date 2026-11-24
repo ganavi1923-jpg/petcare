@@ -250,7 +250,7 @@ router.post(
   [
     body('name').trim().notEmpty().withMessage('Pet name is required'),
     body('species').equals('dog').withMessage('Only dogs can be listed'),
-    body('shelter_id').optional({ values: 'falsy' }).isUUID(),
+    body('shelter_id').optional({ values: 'falsy' }).isUUID('loose'),
     body('age_years').optional().isInt({ min: 0, max: 100 }),
     body('age_months').optional().isInt({ min: 0, max: 11 }),
     body('adoption_fee').optional().isFloat({ min: 0 }).withMessage('Adoption fee must be a non-negative amount in rupees'),
@@ -436,7 +436,7 @@ router.get('/vaccinations', async (req, res) => {
 router.post(
   '/vaccinations',
   [
-    body('pet_id').isUUID().withMessage('Choose a valid pet'),
+    body('pet_id').isUUID('loose').withMessage('Choose a valid pet'),
     body('vaccine_name').trim().isLength({ min: 1, max: 160 }).withMessage('Vaccine name is required'),
     body('vaccination_date').matches(DATE_ONLY_PATTERN).custom(isValidDateOnly).withMessage('Enter a valid vaccination date'),
     body('next_due_date').optional({ values: 'falsy' }).matches(DATE_ONLY_PATTERN).custom(isValidDateOnly).withMessage('Enter a valid next due date'),

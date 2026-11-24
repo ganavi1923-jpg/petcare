@@ -92,8 +92,9 @@ router.post(
   [
     body('title').trim().notEmpty().withMessage('Title is required'),
     body('youtube_url').isURL({ protocols: ['https'], require_protocol: true }).custom(value => {
-      const host = new URL(value).hostname;
-      if (!['youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com'].includes(host)) {
+      const host = new URL(value).hostname.toLowerCase();
+      const validHosts = ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com'];
+      if (!validHosts.includes(host)) {
         throw new Error('Video URL must be a YouTube URL.');
       }
       return true;
@@ -156,8 +157,9 @@ router.put(
   [
     body('title').optional().trim().notEmpty(),
     body('youtube_url').optional().isURL({ protocols: ['https'], require_protocol: true }).custom(value => {
-      const host = new URL(value).hostname;
-      if (!['youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com'].includes(host)) {
+      const host = new URL(value).hostname.toLowerCase();
+      const validHosts = ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com'];
+      if (!validHosts.includes(host)) {
         throw new Error('Video URL must be a YouTube URL.');
       }
       return true;

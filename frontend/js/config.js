@@ -17,13 +17,13 @@
  * Your Supabase project URL
  * Example: 'https://abcdefghijklmnop.supabase.co'
  */
-const SUPABASE_URL = 'https://vpliwuomrptrfjbjskzw.supabase.co';
+const SUPABASE_URL = 'https://skkasdzftcjbnarwqyjd.supabase.co';
 
 /**
  * Your Supabase anonymous (public) key
  * This key is safe to expose in frontend code - it has limited permissions
  */
-const SUPABASE_ANON_KEY = 'sb_publishable_13Z8gY_rHRplljYEs7jIMg__BprTs68';
+const SUPABASE_ANON_KEY = 'sb_publishable_fb4V-bMMJ1VwJGXzHrrTXA_OBB-Q7nz';
 
 /**
  * Base URL for your backend Express API
@@ -32,11 +32,16 @@ const SUPABASE_ANON_KEY = 'sb_publishable_13Z8gY_rHRplljYEs7jIMg__BprTs68';
 const API_BASE_URL = (() => {
     const { hostname, origin, port, protocol } = window.location;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const configuredBackend = window.PAWCARE_BACKEND_URL
+        || document.querySelector('meta[name="pawcare-backend-url"]')?.content
+        || '';
 
-    if (protocol === 'file:' || origin === 'null' || (isLocalHost && port !== '3000')) {
+    if (configuredBackend) {
+        return `${configuredBackend.replace(/\/+$/, '')}/api`;
+    }
+    if (isLocalHost) {
         return 'http://localhost:3000/api';
     }
-
     return `${origin}/api`;
 })();
 

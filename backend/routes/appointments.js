@@ -65,8 +65,8 @@ router.post(
   authenticateUser,
   requireServiceRole,
   [
-    body('pet_id').isUUID().withMessage('Choose a valid pet'),
-    body('shelter_id').isUUID().withMessage('Choose a valid clinic or shelter partner'),
+    body('pet_id').isUUID('loose').withMessage('Choose a valid pet'),
+    body('shelter_id').isUUID('loose').withMessage('Choose a valid clinic or shelter partner'),
     body('appointment_date').matches(DATE_PATTERN).withMessage('Choose a valid appointment date'),
     body('appointment_time').matches(TIME_PATTERN).withMessage('Choose a valid appointment time'),
     body('appointment_type')

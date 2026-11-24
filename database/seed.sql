@@ -264,7 +264,29 @@ INSERT INTO public.pets (
   vaccination_status, deworming_status, neutered_status,
   adoption_status, adoption_requirements, location,
   primary_image, featured, adoption_fee
-) SELECT *
+) SELECT
+  seed.id::uuid,
+  seed.shelter_id::uuid,
+  seed.name,
+  seed.species,
+  seed.breed,
+  seed.age_years,
+  seed.age_months,
+  seed.gender,
+  seed.size,
+  seed.color,
+  seed.description,
+  seed.personality,
+  seed.health_status,
+  seed.vaccination_status,
+  seed.deworming_status,
+  seed.neutered_status,
+  seed.adoption_status,
+  seed.adoption_requirements,
+  seed.location,
+  seed.primary_image,
+  seed.featured,
+  seed.adoption_fee
 FROM (VALUES
 ('22222222-0000-0000-0000-000000000007', '11111111-0000-0000-0000-000000000001', 'Daisy', 'dog', 'Indie', 1, 2, 'female', 'medium', 'Tan', 'Daisy is a gentle, playful Indie who enjoys walks and meeting new people.', ARRAY['gentle', 'playful', 'social'], 'Healthy and vaccinated.', TRUE, TRUE, FALSE, 'available', 'A loving home with daily walks.', 'Mumbai', 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&auto=format&fit=crop&q=80', FALSE, 750),
 ('22222222-0000-0000-0000-000000000008', '11111111-0000-0000-0000-000000000002', 'Milo', 'dog', 'Shih Tzu', 3, 5, 'male', 'small', 'White and Brown', 'Milo is an affectionate companion who loves quiet evenings and short walks.', ARRAY['affectionate', 'calm', 'friendly'], 'Healthy and vaccinated.', TRUE, TRUE, TRUE, 'available', 'Regular grooming required.', 'New Delhi', 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=800&auto=format&fit=crop&q=80', FALSE, 1800),

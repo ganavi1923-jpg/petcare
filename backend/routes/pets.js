@@ -231,8 +231,9 @@ router.get('/recommended', optionalAuth, async (req, res) => {
       let score = 0;
       if (breed && pet.breed?.toLowerCase().includes(breed.toLowerCase())) score += 3;
       if (gender && pet.gender === gender) score += 2;
-      if (age_min !== undefined && pet.age >= Number(age_min)) score += 1;
-      if (age_max !== undefined && pet.age <= Number(age_max)) score += 1;
+      const petAge = pet.age_years ?? pet.age;
+      if (age_min !== undefined && petAge !== undefined && petAge !== null && petAge >= Number(age_min)) score += 1;
+      if (age_max !== undefined && petAge !== undefined && petAge !== null && petAge <= Number(age_max)) score += 1;
       return { ...pet, score };
     });
 

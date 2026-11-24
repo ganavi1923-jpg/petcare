@@ -892,9 +892,10 @@ async function loadShelter() {
       .map(pet => {
         const images = pet.pet_images || [];
         const image = images.find(item => item.is_primary)?.image_url || images[0]?.image_url || source.image;
+        const petAge = pet.age_years ?? pet.age;
         return {
           ...pet,
-          age: pet.age == null ? '' : `${pet.age} years`,
+          age: petAge == null ? '' : `${petAge} year${petAge === 1 ? '' : 's'}`,
           image,
           status: pet.adoption_status,
         };

@@ -22,7 +22,7 @@ router.post(
   authenticateUser,
   requireServiceRole,
   [
-    body('pet_id').isUUID().withMessage('A valid pet_id is required'),
+    body('pet_id').isUUID('loose').withMessage('A valid pet_id is required'),
     body('message').optional().trim().isLength({ max: 2000 }),
     body('living_situation')
       .optional()
@@ -54,6 +54,7 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('[adoptions POST] Validation error:', JSON.stringify(errors.array()), 'body:', req.body);
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
@@ -365,6 +366,7 @@ router.put(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('[adoptions POST] Validation error:', JSON.stringify(errors.array()), 'body:', req.body);
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
@@ -399,7 +401,7 @@ router.put(
       }
 
       // If approved, update pet adoption status
-      if (status === 'approved') {
+      if (status === 'approved' && application.pet_id) {
         await supabaseAdmin
           .from('pets')
           .update({ adoption_status: 'adopted', updated_at: new Date().toISOString() })

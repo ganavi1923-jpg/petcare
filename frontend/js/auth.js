@@ -31,6 +31,41 @@ const clearUserScopedBrowserData = () => {
     localStorage.removeItem('pawcare_applications');
 };
 
+const requestPasswordReset = async (email, redirectUrl) => {
+    const sb = getSupabase();
+    if (!sb) return { success: false, error: 'Password recovery is unavailable.' };
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return { success: false, error: 'Enter a valid email address.' };
+    }
+    try {
+        const { error } = await sb.auth.resetPasswordForEmail(normalizedEmail, {
+            redirectTo: redirectUrl,
+        });
+        if (error) throw error;
+        return { success: true, message: 'If the account exists, password recovery instructions have been sent.' };
+    } catch (error) {
+        console.error('Password recovery request failed:', error);
+        return { success: false, error: 'Could not request password recovery. Please try again.' };
+    }
+};
+
+const updatePassword = async (newPassword) => {
+    const sb = getSupabase();
+    if (!sb) return { success: false, error: 'Password recovery is unavailable.' };
+    if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+    try {
+        const { error } = await sb.auth.updateUser({ password: newPassword });
+        if (error) throw error;
+        return { success: true, message: 'Your password was updated successfully.' };
+    } catch (error) {
+        console.error('Password update failed:', error);
+        return { success: false, error: error.message || 'Could not update your password.' };
+    }
+};
+
 // ============================================================
 // CORE AUTH FUNCTIONS
 // ============================================================
@@ -361,6 +396,10 @@ const updateNavbar = (user, profile) => {
     const authElements = document.querySelectorAll('.nav-auth');
     // Elements shown only for admins
     const adminElements = document.querySelectorAll('.nav-admin');
+    // Specific IDs used in some pages (food, medicine, petcare)
+    const loginBtn = document.getElementById('loginBtn');
+    const registerBtn = document.getElementById('registerBtn');
+    const userMenu = document.getElementById('userMenu');
     // User display name element
     const userNameEl = document.getElementById('nav-user-name');
     // User avatar element
@@ -370,6 +409,9 @@ const updateNavbar = (user, profile) => {
         // --- Logged In State ---
         guestElements.forEach(el => el.style.display = 'none');
         authElements.forEach(el => el.style.display = '');
+        if (loginBtn) loginBtn.classList.add('d-none');
+        if (registerBtn) registerBtn.classList.add('d-none');
+        if (userMenu) userMenu.classList.remove('d-none');
 
         // Show admin-specific nav items
         if (profile?.role === 'admin') {
@@ -399,6 +441,9 @@ const updateNavbar = (user, profile) => {
         guestElements.forEach(el => el.style.display = '');
         authElements.forEach(el => el.style.display = 'none');
         adminElements.forEach(el => el.style.display = 'none');
+        if (loginBtn) loginBtn.classList.remove('d-none');
+        if (registerBtn) registerBtn.classList.remove('d-none');
+        if (userMenu) userMenu.classList.add('d-none');
     }
 };
 
@@ -545,11 +590,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Make auth functions globally available
+window.loginUser = loginUser;
+window.registerUser = registerUser;
+window.logoutUser = logoutUser;
+window.handleLogout = logoutUser;
+window.initAuth = initAuth;
+window.requestPasswordReset = requestPasswordReset;
+window.updatePassword = updatePassword;
+window.getCurrentUser = getCurrentUser;
+window.getUserProfile = getUserProfile;
+window.updateNavbar = updateNavbar;
+window.updateNotificationBadge = updateNotificationBadge;
+window.requireAuth = requireAuth;
+window.requireAdmin = requireAdmin;
+window.setupLogoutButtons = setupLogoutButtons;
+
 window.PawCareAuth = {
     initAuth,
     registerUser,
     loginUser,
     logoutUser,
+    handleLogout: logoutUser,
+    requestPasswordReset,
+    updatePassword,
     getCurrentUser,
     getUserProfile,
     updateNavbar,

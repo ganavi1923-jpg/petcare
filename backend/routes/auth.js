@@ -11,10 +11,11 @@ const { authenticateUser, requireServiceRole } = require('../middleware/auth');
 const router = express.Router();
 
 function withProfileAliases(profile) {
+  if (!profile) return null;
   return {
     ...profile,
-    full_name: profile.name,
-    avatar_url: profile.profile_image,
+    full_name: profile.name || profile.full_name,
+    avatar_url: profile.profile_image || profile.avatar_url,
   };
 }
 
@@ -100,6 +101,16 @@ router.post('/register', registerValidation, validateAndRequireServiceRole, asyn
       });
     }
 
+    // Auto-confirm in development so local test accounts can log in immediately
+    if (process.env.NODE_ENV !== 'production' && !authData.user.email_confirmed_at) {
+      const { data: confirmedUser } = await supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
+        email_confirm: true,
+      });
+      if (confirmedUser?.user) {
+        authData.user = confirmedUser.user;
+      }
+    }
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .select()
@@ -117,10 +128,15 @@ router.post('/register', registerValidation, validateAndRequireServiceRole, asyn
         .json({ success: false, message: 'Failed to create user profile' });
     }
 
+    if (address && profile) {
+      await supabaseAdmin.from('users').update({ address }).eq('id', authData.user.id);
+      profile.address = address;
+    }
+
     return res.status(201).json({
       success: true,
-      message: authData.session
-        ? 'Registration successful'
+      message: (authData.session || process.env.NODE_ENV !== 'production')
+        ? 'Registration successful! You can now log in.'
         : 'Account created successfully! Please check your email to verify your account.',
       data: {
         user: withProfileAliases(profile),

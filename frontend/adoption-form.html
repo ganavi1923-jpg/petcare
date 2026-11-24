@@ -1029,7 +1029,14 @@ function validateSection4() {
   const reason = document.getElementById('adoptionReason');
   const vetExpenses = document.querySelector('input[name="vetExpenses"]:checked');
 
-  if (!petSel.value) { setFieldInvalid(petSel); valid = false; } else setFieldValid(petSel);
+  if (!petSel.value) {
+    setFieldInvalid(petSel);
+    alert('Please select which pet you are applying for from the dropdown.');
+    petSel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    valid = false;
+  } else {
+    setFieldValid(petSel);
+  }
   if (reason.value.trim().length < 50) {
     setFieldInvalid(reason);
     document.getElementById('reasonError').style.display = 'inline';
@@ -1068,6 +1075,19 @@ function prevSection(from) {
 
 // ---- Submit ----
 async function submitApplication() {
+  const petId = document.getElementById('petSelect')?.value;
+  if (!petId) {
+    showSection(4);
+    const petSel = document.getElementById('petSelect');
+    setFieldInvalid(petSel);
+    petSel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const submitError = document.getElementById('submitError');
+    const submitErrorMsg = document.getElementById('submitErrorMsg');
+    submitErrorMsg.textContent = 'Please select a pet in Step 4 before submitting.';
+    submitError.classList.remove('d-none');
+    return;
+  }
+
   if (!validateSection5()) return;
 
   const submitBtn = document.getElementById('submitBtn');

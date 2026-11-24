@@ -35,6 +35,11 @@ const PORT = process.env.PORT || 3000;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 const isProduction = process.env.NODE_ENV === 'production';
 
+if (isProduction) {
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+}
+
 // ---------------------------------------------------------------------------
 // CORS
 // Allow requests from the frontend origin (and localhost variants in dev).
@@ -71,6 +76,16 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+if (isProduction) {
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+    next();
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Body parsers
@@ -121,10 +136,12 @@ app.get('/api/test-supabase', async (_req, res) => {
       return res.status(502).json({
         success: false,
         message: 'Supabase query failed',
-        details: error.message,
-        hint: error.hint || null,
-        httpStatus: status,
-      });
+          ...(process.env.NODE_ENV !== 'production' && {
+            details: error.message,
+            hint: error.hint || null,
+            httpStatus: status,
+          }),
+        });
     }
 
     return res.status(200).json({
@@ -195,7 +212,10 @@ app.use((err, req, res, _next) => {
   const statusCode = err.status || err.statusCode || 500;
   return res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal server error',
+    message:
+      process.env.NODE_ENV === 'production' && statusCode >= 500
+        ? 'Internal server error'
+        : err.message || 'Internal server error',
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 });
@@ -203,10 +223,13 @@ app.use((err, req, res, _next) => {
 // ---------------------------------------------------------------------------
 // Start server
 // ---------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`✅  PetCare Connect API listening on port ${PORT}`);
-  console.log(`   Health check → http://localhost:${PORT}/api/health`);
-  console.log(`   Environment  → ${process.env.NODE_ENV || 'development'}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`✅  PetCare Connect API listening on port ${PORT}`);
+    console.log(`   Health check → http://localhost:${PORT}/api/health`);
+    console.log(`   Environment  → ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
 
 module.exports = app; // for testing

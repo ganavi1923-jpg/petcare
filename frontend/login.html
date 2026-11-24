@@ -80,6 +80,9 @@
               <input class="form-control has-toggle" id="password" name="password" type="password" autocomplete="current-password" required />
               <button class="password-toggle" type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false"><i class="fas fa-eye" aria-hidden="true"></i></button>
             </div>
+            <div class="text-end mt-2">
+              <button type="button" class="btn btn-link btn-sm p-0" id="forgotPassword">Forgot password?</button>
+            </div>
           </div>
           <button class="btn btn-login w-100" id="loginSubmit" type="submit"><i class="fas fa-right-to-bracket me-2" aria-hidden="true"></i>Log in <i class="fas fa-arrow-right ms-2" aria-hidden="true"></i></button>
         </form>
@@ -94,6 +97,23 @@
     const loginForm = document.getElementById('loginForm');
     const loginMessage = document.getElementById('loginMessage');
     const loginSubmit = document.getElementById('loginSubmit');
+    const forgotPassword = document.getElementById('forgotPassword');
+
+    forgotPassword.addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        loginMessage.textContent = 'Enter your email address first.';
+        loginMessage.className = 'alert alert-warning';
+        document.getElementById('email').focus();
+        return;
+      }
+      forgotPassword.disabled = true;
+      const resetUrl = new URL('reset-password.html', window.location.origin + window.location.pathname.replace(/[^/]*$/, '')).href;
+      const result = await window.PawCareAuth.requestPasswordReset(email, resetUrl);
+      loginMessage.textContent = result.success ? result.message : result.error;
+      loginMessage.className = result.success ? 'alert alert-success' : 'alert alert-danger';
+      forgotPassword.disabled = false;
+    });
 
     document.querySelectorAll('[data-password-toggle]').forEach(button => {
       button.addEventListener('click', () => {

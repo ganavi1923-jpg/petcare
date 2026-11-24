@@ -47,8 +47,19 @@
     if (/^[A-Za-z0-9_-]{11}$/.test(savedId)) return savedId;
     try {
       const url = new URL(video.youtube_url);
-      if (!['youtube.com', 'www.youtube.com', 'youtu.be', 'www.youtube-nocookie.com'].includes(url.hostname)) return '';
-      const id = url.hostname === 'youtu.be' ? url.pathname.slice(1) : url.pathname.split('/').pop();
+      const host = url.hostname.toLowerCase();
+      const validHosts = ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com'];
+      if (!validHosts.includes(host)) return '';
+      let id = '';
+      if (host === 'youtu.be' || host === 'www.youtu.be') {
+        id = url.pathname.slice(1).split('/')[0];
+      } else if (url.searchParams.has('v')) {
+        id = url.searchParams.get('v');
+      } else if (url.pathname.startsWith('/embed/') || url.pathname.startsWith('/v/')) {
+        id = url.pathname.split('/')[2];
+      } else {
+        id = url.pathname.split('/').filter(Boolean).pop();
+      }
       return /^[A-Za-z0-9_-]{11}$/.test(id) ? id : '';
     } catch {
       return '';
@@ -60,9 +71,10 @@
     if (!videoId) return '';
     const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    const playerOrigin = `${window.location.protocol}//${window.location.host}`;
     return `<div class="col-md-6 col-lg-4">
       <article class="care-video">
-        <iframe src="https://www.youtube.com/embed/${videoId}" title="${escapeHtml(video.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        <iframe class="youtube-player" data-youtube-id="${videoId}" src="https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&origin=${encodeURIComponent(playerOrigin)}&rel=0" title="${escapeHtml(video.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         <div class="care-video-content">
           <span class="topic-tag">${escapeHtml(video.category)}</span>
           <h2>${escapeHtml(video.title)}</h2>
@@ -106,6 +118,7 @@
     ].filter(Boolean);
 
     videoGrid.innerHTML = cards.join('');
+    initializeYoutubePlayers();
     if (cards.length) {
       videoStatus.hidden = true;
       return;
@@ -154,6 +167,54 @@
     if (!failures.length) return;
     videoStatus.hidden = false;
     videoStatus.textContent = failures.join(' ');
+  }
+
+  function initializeYoutubePlayers() {
+    if (!window.YT || typeof window.YT.Player !== 'function') return;
+    videoGrid.querySelectorAll('iframe.youtube-player:not([data-player-ready])').forEach(iframe => {
+      iframe.dataset.playerReady = 'pending';
+      new window.YT.Player(iframe, {
+        events: {
+          onError(event) {
+            const messages = {
+              2: 'This YouTube video has an invalid ID.',
+              5: 'This browser cannot play the YouTube video.',
+              100: 'This YouTube video was removed or is unavailable.',
+              101: 'The video owner does not allow embedded playback.',
+              150: 'The video owner does not allow embedded playback.',
+            };
+            const notice = messages[event.data] || 'YouTube could not play this video.';
+            console.error(`[videos] YouTube playback error ${event.data}: ${notice}`);
+            const article = iframe.closest('.care-video');
+            if (article) {
+              const status = document.createElement('p');
+              status.className = 'small text-danger px-3';
+              status.setAttribute('role', 'status');
+              status.textContent = `${notice} Use “Open video on YouTube” below.`;
+              article.appendChild(status);
+            }
+          },
+          onReady() {
+            iframe.dataset.playerReady = 'true';
+          },
+        },
+      });
+    });
+  }
+
+  function loadYoutubeApi() {
+    if (window.YT?.Player) {
+      initializeYoutubePlayers();
+      return;
+    }
+    window.onYouTubeIframeAPIReady = () => initializeYoutubePlayers();
+    if (!document.querySelector('script[data-pawcare-youtube-api]')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.dataset.pawcareYoutubeApi = 'true';
+      document.head.appendChild(script);
+    }
   }
 
   async function fetchJson(url) {
@@ -409,6 +470,7 @@
     }
 
     await loadPublicVideos();
+    loadYoutubeApi();
     try {
       adminToken = await getAdminToken();
       if (adminToken) {

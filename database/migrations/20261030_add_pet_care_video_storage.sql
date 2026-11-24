@@ -144,6 +144,19 @@ BEGIN
       104857600,
       ARRAY['video/mp4', 'video/webm', 'video/quicktime', 'image/jpeg', 'image/png', 'image/webp']
     );
+  ELSE
+    UPDATE storage.buckets
+    SET public = FALSE,
+        file_size_limit = 104857600,
+        allowed_mime_types = ARRAY[
+          'video/mp4',
+          'video/webm',
+          'video/quicktime',
+          'image/jpeg',
+          'image/png',
+          'image/webp'
+        ]
+    WHERE id = 'pet-care-videos';
   END IF;
 
   IF NOT EXISTS (

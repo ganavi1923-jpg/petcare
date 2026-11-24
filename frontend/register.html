@@ -184,11 +184,12 @@
         }
       }
 
-      registerMessage.textContent = result.message.includes('verify')
-        ? `${result.message} Then log in to continue.`
-        : `${result.message} You can now log in.`;
+      registerMessage.innerHTML = `${result.message} <a href="login.html" class="alert-link fw-bold ms-1">Click here to log in →</a>`;
       registerMessage.className = 'alert alert-success';
       registerSubmit.innerHTML = '<i class="fas fa-circle-check me-2" aria-hidden="true"></i>Account created';
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 2000);
     });
   </script>
 </body>
