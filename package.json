@@ -4,8 +4,8 @@
   "description": "PetCare Connect - Full Stack Pet Adoption & Care Platform",
   "main": "backend/server.js",
   "scripts": {
-    "start": "node --use-system-ca backend/server.js",
-    "dev": "nodemon --exec \"node --use-system-ca\" backend/server.js",
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
     "check": "npm --prefix backend run check"
   },
   "dependencies": {
