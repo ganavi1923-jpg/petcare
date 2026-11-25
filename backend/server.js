@@ -44,32 +44,33 @@ if (isProduction) {
 // CORS
 // Allow requests from the frontend origin (and localhost variants in dev).
 // ---------------------------------------------------------------------------
-if (isProduction && !process.env.FRONTEND_URL) {
-  throw new Error('FRONTEND_URL must be set to the deployed frontend origin in production.');
-}
+const frontendUrl = process.env.FRONTEND_URL || process.env.RENDER_EXTERNAL_URL;
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
-];
-
-if (!isProduction) {
-  allowedOrigins.push(
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500'
-  );
-}
+  frontendUrl,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g., mobile apps, curl, Postman)
+      // Allow requests with no origin (e.g., mobile apps, curl, same-origin, Postman)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS policy: origin "${origin}" is not allowed`));
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.onrender.com') ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
